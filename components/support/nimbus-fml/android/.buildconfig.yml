@@ -1,0 +1,10 @@
+libraryVersion: 42.0.1
+groupId: org.mozilla.telemetry
+projects:
+  nimbus-gradle-plugin:
+    path: gradle-plugin
+    artifactId: nimbus-gradle-plugin
+    publications:
+      - name: nimbus-gradle-plugin
+        type: jar
+    description: 'A Gradle plugin to facilitate use of the Nimbus Feature API'
