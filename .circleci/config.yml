@@ -91,7 +91,8 @@ commands:
             curl -sfSL --retry 5 --retry-delay 10 -O "https://github.com/tcnksm/ghr/releases/download/v0.12.0/${GHR}.zip"
             echo "${GHR_SHA256} *${GHR}.zip" | shasum -a 256 -c -
             unzip "${GHR}.zip"
-            echo "alias ghr=$(pwd)/$GHR/ghr" >> $BASH_ENV
+
+            echo "export PATH=$PATH:$(pwd)/$GHR" >> $BASH_ENV
       # Run in a different shell to source $BASH_ENV
       - run: |
           ghr --version
@@ -502,6 +503,7 @@ jobs:
   release-nimbus-fml:
     executor: macos
     steps:
+      - install-ghr
       - run:
           name: Release nimbus-fml archive on Github
           command: |
