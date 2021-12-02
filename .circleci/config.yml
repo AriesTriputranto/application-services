@@ -496,9 +496,12 @@ jobs:
             fi
             ./components/support/nimbus-fml/scripts/build-dist.sh
       - store_artifacts:
-          name: Store nimbus-fml build command in the workspace
+          name: Store nimbus-fml build archive in workspace
           path: nimbus-fml.zip
           destination: dist/nimbus-fml.zip
+  release-nimbus-fml:
+    executor: macos
+    steps:
       - run:
           name: Release nimbus-fml archive on Github
           command: |
@@ -571,6 +574,20 @@ workflows:
       - XCFramework release:
           requires:
             - iOS build and test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+  nimbus-artifacts:
+    jobs:
+      - build-nimbus-fml:
+          filters: # required since `Release` has tag filters AND requires `Build`
+            tags:
+              only: /.*/
+      - release-nimbus-fml:
+          requires:
+            - build-nimbus-fml
           filters:
             branches:
               ignore: /.*/
