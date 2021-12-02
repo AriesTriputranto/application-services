@@ -15,7 +15,7 @@ gradlePlugin {
     plugins {
         create("nimbusPlugins") {
             id = "org.mozilla.experiments.nimbus-gradle-plugin"
-            implementationClass = "org.mozilla.experiments.nimbus-gradle-plugin.NimbusPlugin"
+            implementationClass = "NimbusPlugin"
         }
     }
 }

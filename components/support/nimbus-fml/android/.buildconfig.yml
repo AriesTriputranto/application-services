@@ -1,5 +1,5 @@
 libraryVersion: 42.0.1
-groupId: org.mozilla.telemetry
+groupId: org.mozilla.experiments
 projects:
   nimbus-gradle-plugin:
     path: gradle-plugin
