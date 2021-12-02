@@ -511,76 +511,76 @@ jobs:
 
 workflows:
   version: 2
-  swiftlint:
-    jobs:
-      - Check Swift formatting
-  check-formatting:
-    jobs:
-      - Check Rust formatting
-  clippy:
-    jobs:
-      - Lint Rust with clippy
-  check-protobuf-uptodate:
-    jobs:
-      - Check Protobuf files are up-to-date
-  check-dependencies:
-    jobs:
-      - Check Rust dependencies
-  bash-lint:
-    jobs:
-      - Lint Bash scripts
-  check-dependencies-periodically:
-    jobs:
-      - Check Rust dependencies
-    triggers:
-      - schedule:
-          cron: "0 7 * * *"
-          filters:
-            branches:
-              only:
-                - main
-  run-beta-tests-periodically:
-    jobs:
-      - Rust tests - beta
-    triggers:
-      - schedule:
-          cron: "0 7 * * *"
-          filters:
-            branches:
-              only:
-                - main
-  run-tests:
-    jobs:
-      - Rust tests
-      - Rust benchmarks
-  run-tests-min-supported-version:
-    jobs:
-      - Rust tests - min supported rust version
-  coverage:
-    jobs:
-      - Generate code coverage
-  ios-artifacts:
-    jobs:
-      - iOS build and test:
-          filters: # required since `Release` has tag filters AND requires `Build`
-            tags:
-              only: /.*/
-      - Carthage release:
-          requires:
-            - iOS build and test
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
-      - XCFramework release:
-          requires:
-            - iOS build and test
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
+  # swiftlint:
+  #   jobs:
+  #     - Check Swift formatting
+  # check-formatting:
+  #   jobs:
+  #     - Check Rust formatting
+  # clippy:
+  #   jobs:
+  #     - Lint Rust with clippy
+  # check-protobuf-uptodate:
+  #   jobs:
+  #     - Check Protobuf files are up-to-date
+  # check-dependencies:
+  #   jobs:
+  #     - Check Rust dependencies
+  # bash-lint:
+  #   jobs:
+  #     - Lint Bash scripts
+  # check-dependencies-periodically:
+  #   jobs:
+  #     - Check Rust dependencies
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 7 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - main
+  # run-beta-tests-periodically:
+  #   jobs:
+  #     - Rust tests - beta
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 7 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - main
+  # run-tests:
+  #   jobs:
+  #     - Rust tests
+  #     - Rust benchmarks
+  # run-tests-min-supported-version:
+  #   jobs:
+  #     - Rust tests - min supported rust version
+  # coverage:
+  #   jobs:
+  #     - Generate code coverage
+  # ios-artifacts:
+  #   jobs:
+  #     - iOS build and test:
+  #         filters: # required since `Release` has tag filters AND requires `Build`
+  #           tags:
+  #             only: /.*/
+  #     - Carthage release:
+  #         requires:
+  #           - iOS build and test
+  #         filters:
+  #           branches:
+  #             ignore: /.*/
+  #           tags:
+  #             only: /^v.*/
+  #     - XCFramework release:
+  #         requires:
+  #           - iOS build and test
+  #         filters:
+  #           branches:
+  #             ignore: /.*/
+  #           tags:
+  #             only: /^v.*/
   nimbus-artifacts:
     jobs:
       - build-nimbus-fml:
