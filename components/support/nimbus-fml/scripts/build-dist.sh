@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 targets="aarch64-apple-darwin x86_64-unknown-linux-musl x86_64-apple-darwin"
-dry_run=0
+dry_run=false
 
-root_dir=$(dirname $0)/../../../..
+root_dir=$(dirname "$0")/../../../..
 fml_dir=$root_dir/components/support/nimbus-fml
 target_dir=$root_dir/target
 filename=nimbus-fml
@@ -13,7 +13,7 @@ prompt='$'
 echo "## Installing tools for cross compiling"
 install_musl_cross="brew install filosottile/musl-cross/musl-cross"
 cargo_clean="cargo clean"
-if (( $dry_run == 0 )) ; then
+if [[ $dry_run != "true" ]] ; then
     $install_musl_cross
     $cargo_clean
 else
@@ -31,14 +31,13 @@ for TARGET in $targets ; do
     rustup="rustup target add $TARGET"
     cargo_build="cargo build --release --target $TARGET"
 
-    if (( $dry_run == 0 )) ; then
-
+    if [[ $dry_run != "true" ]] ; then
         $rustup
-        (cd $fml_dir; $cargo_build)
+        (cd "$fml_dir" && $cargo_build)
 
     else
         echo "$prompt $rustup"
-        echo "$prompt (cd $fml_dir; $cargo_build )"
+        echo "$prompt (cd $fml_dir && $cargo_build )"
     fi
 
     zip_cmd="$zip_cmd $TARGET/release/$filename"
@@ -46,9 +45,8 @@ for TARGET in $targets ; do
 done
 echo
 echo "## Preparing dist archive"
-cmd="(cd $target_dir ; $zip_cmd )"
-if (( $dry_run == 0 )) ; then
-    (cd $target_dir ; $zip_cmd )
+if [[ $dry_run != "true" ]] ; then
+    (cd "$target_dir" && $zip_cmd )
 else
-    echo "$prompt $cmd"
+    echo "$prompt (cd $target_dir ; $zip_cmd )"
 fi
