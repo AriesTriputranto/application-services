@@ -5,6 +5,7 @@
 package mozilla.appservices.places
 
 import java.lang.RuntimeException
+import mozilla.appservices.places.uniffi.PublicNode
 
 /**
  * Enumeration of the ids of the roots of the bookmarks tree.
@@ -182,7 +183,7 @@ interface ReadableBookmarksConnection : InterruptibleConnection {
      * @throws OperationInterrupted if this database implements [InterruptibleConnection] and
      * has its `interrupt()` method called on another thread.
      */
-    fun getBookmarksTree(rootGUID: String, recursive: Boolean): BookmarkTreeNode?
+    fun getBookmarksTree(rootGUID: String, recursive: Boolean): PublicNode?
 
     /**
      * Returns the information about the bookmark with the provided id. This differs from
@@ -196,7 +197,7 @@ interface ReadableBookmarksConnection : InterruptibleConnection {
      * @throws OperationInterrupted if this database implements [InterruptibleConnection] and
      * has its `interrupt()` method called on another thread.
      */
-    fun getBookmark(guid: String): BookmarkTreeNode?
+    fun getBookmark(guid: String): PublicNode?
 
     /**
      * Returns the list of bookmarks with the provided URL.
@@ -212,7 +213,7 @@ interface ReadableBookmarksConnection : InterruptibleConnection {
      * @throws OperationInterrupted if this database implements [InterruptibleConnection] and
      * has its `interrupt()` method called on another thread.
      */
-    fun getBookmarksWithURL(url: String): List<BookmarkItem>
+    fun getBookmarksWithURL(url: String): List<PublicNode>
 
     /**
      * Returns the URL for the provided search keyword, if one exists.
@@ -238,7 +239,7 @@ interface ReadableBookmarksConnection : InterruptibleConnection {
      * @throws OperationInterrupted if this database implements [InterruptibleConnection] and
      * has its `interrupt()` method called on another thread.
      */
-    fun searchBookmarks(query: String, limit: Int): List<BookmarkItem>
+    fun searchBookmarks(query: String, limit: Int): List<PublicNode>
 
     /**
      * Returns the list of most recently added bookmarks.
@@ -252,7 +253,7 @@ interface ReadableBookmarksConnection : InterruptibleConnection {
      * @throws OperationInterrupted if this database implements [InterruptibleConnection] and
      * has its `interrupt()` method called on another thread.
      */
-    fun getRecentBookmarks(limit: Int): List<BookmarkItem>
+    fun getRecentBookmarks(limit: Int): List<PublicNode>
 }
 
 /**

@@ -5,6 +5,12 @@
 [Wrapped]
 typedef string Url;
 
+[Wrapped]
+typedef string Guid;
+
+[Wrapped]
+typedef i64 Timestamp;
+
 namespace places {
     [Throws=PlacesError]
     PlacesApi places_api_new(string db_path);
@@ -45,6 +51,21 @@ interface PlacesConnection {
 
     [Throws=PlacesError]
     void metadata_delete_older_than(i64 older_than);
+
+    [Throws=PlacesError]
+    PublicNode? bookmarks_get_tree([ByRef] Guid item_guid);
+
+    [Throws=PlacesError]
+    PublicNode? bookmarks_get_by_guid([ByRef] Guid guid, u8 get_direct_children);
+
+    [Throws=PlacesError]
+    sequence<PublicNode> bookmarks_get_all_with_url(Url url);
+
+    [Throws=PlacesError]
+    sequence<PublicNode> bookmarks_search(string query, i32 limit);
+
+    [Throws=PlacesError]
+    sequence<PublicNode> bookmarks_get_recent(i32 limit);
 };
 
 // Some kind of namespacing for uniffi would be ideal. Multiple udl/macro defns?
@@ -111,4 +132,25 @@ enum PlacesError {
     "InvalidBookmarkUpdate",
     "CannotUpdateRoot",
     "InternalPanic",
+};
+
+enum BookmarkType {
+    "Bookmark",
+    "Folder",
+    "Separator",
+};
+
+// TODO: will rename this to BookmarkNode once all dependencies on old msg_types::BookmarkNode
+// type are removed
+dictionary PublicNode {
+    BookmarkType node_type;
+    Guid guid;
+    Guid? parent_guid;
+    u32 position;
+    Timestamp date_added;
+    Timestamp last_modified;
+    Url? url;
+    string? title;
+    sequence<Guid>? child_guids;
+    sequence<PublicNode>? child_nodes;
 };

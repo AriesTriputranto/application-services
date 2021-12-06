@@ -7,11 +7,14 @@
 use crate::api::places_api::places_api_new;
 use crate::error::{Error, ErrorKind, InvalidPlaceInfo, PlacesError};
 use crate::msg_types;
+use crate::storage::bookmarks;
+use crate::storage::bookmarks::PublicNode;
 use crate::storage::history_metadata;
 use crate::storage::history_metadata::{
     DocumentType, HistoryHighlight, HistoryHighlightWeights, HistoryMetadata,
     HistoryMetadataObservation,
 };
+use crate::types::BookmarkType;
 use crate::ConnectionType;
 use crate::{PlacesApi, PlacesDb};
 use ffi_support::{
@@ -20,6 +23,8 @@ use ffi_support::{
 };
 use parking_lot::Mutex;
 use std::sync::Arc;
+use sync_guid::Guid;
+use types::Timestamp;
 use url::Url;
 
 lazy_static::lazy_static! {
@@ -41,6 +46,155 @@ impl UniffiCustomTypeWrapper for Url {
     fn unwrap(obj: Self) -> Self::Wrapped {
         obj.into()
     }
+}
+
+impl UniffiCustomTypeWrapper for Guid {
+    type Wrapped = String;
+
+    fn wrap(val: Self::Wrapped) -> uniffi::Result<Guid> {
+        Ok(Guid::new(val.as_str()))
+    }
+
+    fn unwrap(obj: Self) -> Self::Wrapped {
+        obj.into()
+    }
+}
+
+impl UniffiCustomTypeWrapper for Timestamp {
+    type Wrapped = i64;
+
+    fn wrap(val: Self::Wrapped) -> uniffi::Result<Timestamp> {
+        Ok(Timestamp::from(val as u64))
+    }
+
+    fn unwrap(obj: Self) -> Self::Wrapped {
+        obj.as_millis() as i64
+    }
+}
+
+///*
+/// A bookmark node.
+///
+/// We use a single message type for bookmarks. It covers insertion, deletion,
+/// and update, and represents all three bookmark types.
+///
+/// This simplifies the FFI by reducing the number of types that must go across
+/// it, and retuces boilderplate, but removes some static-ish guarantees we
+/// might have otherwise.
+///
+/// Note that these docs comments are internal, and don't necessarily impact the actual
+/// API we expose to Kotlin/Swift (this is particularly true around reads).
+#[derive(Clone, PartialEq)]
+pub struct BookmarkNode {
+    ///*
+    /// The type of this bookmark, a `BookmarkType` (from `types.rs`).
+    ///
+    /// This impacts which fields may be present.
+    ///
+    /// It's illegal to attempt to change this when updating a bookmark.
+    ///
+    /// Note: this probably should be an `enum`, but prost seems to get upset
+    /// about it so we're just using int32 for now.
+    ///
+    /// Note: this is `node_type` and not `type` because `type` is reserved
+    /// in Rust.
+    ///
+    /// - Always returned on reads.
+    /// - Required for inserts.
+    /// - Not provided for updates.
+    pub node_type: Option<i32>,
+    ///*
+    /// The bookmarks guid.
+    ///
+    /// - Always returned on reads.
+    /// - Not allowed for inserts.
+    /// - Required for updates (specifies which record is being changed)
+    pub guid: Option<String>,
+    ///*
+    /// Creation time, in milliseconds since the unix epoch.
+    ///
+    /// May not be a local timestamp, and may shift if new devices are able to
+    /// provide an earlier (but still valid) timestamp.
+    ///
+    /// - Always returned on reads.
+    /// - Ignored for insertion and update.
+    pub date_added: Option<i64>,
+    ///*
+    /// Last modification time, in milliseconds since the unix epoch.
+    ///
+    /// - Always returned on reads.
+    /// - Ignored for insertion and update.
+    pub last_modified: Option<i64>,
+    ///*
+    /// Guid of the parent record.
+    ///
+    /// - Returned on reads, except for reads of the bookmark root.
+    /// - Required for insertion.
+    /// - On updates, if provided, we treat it as a move.
+    ///     - Interacts with `position`, see its documentation below
+    ///       for details on how.
+    pub parent_guid: Option<String>,
+    ///*
+    /// Zero based index within the parent.
+    ///
+    /// - Not provided on reads (for now).
+    ///
+    /// - Allowed for insertion.
+    ///    - Leaving it out means 'end of folder'.
+    ///
+    /// - Allowed for updates.
+    ///     - If `parent_guid` is not provided and `position` is, we treat this
+    ///       a move within the same folder.
+    ///
+    ///     - If `parent_guid` and `position` are both provided, we treat this as
+    ///       a move to / within that folder, and we insert at the requested
+    ///       position.
+    ///
+    ///     - If `position` is not provided (and `parent_guid` is) then it's
+    ///       treated as a move to the end of that folder.
+    pub position: Option<u32>,
+    ///*
+    /// Bookmark title. Not present for type = `BookmarkType::Separator`.
+    ///
+    /// - Returned on reads if it exists.
+    /// - Required when inserting folders.
+    pub title: Option<String>,
+    ///*
+    /// Bookmark URL. Only allowed/present for type = `BookmarkType::Bookmark`.
+    ///
+    /// - Always returned on reads (for `BookmarkType::Bookmark`).
+    /// - Required when inserting a new bookmark.
+    pub url: Option<String>,
+    ///*
+    /// IDs of folder children, in order. Only present for type =
+    /// `BookmarkType::Folder`.
+    ///
+    /// - Returned on reads (for `BookmarkType::Folder`).
+    /// - Forbidden for insertions and updates.
+    /// - Not provided if `child_nodes` is provided, to avoid sending more data
+    ///   over the FFI than necessary.
+    pub child_guids: Vec<String>,
+    ///*
+    /// Data about folder children, in order. Only present for type =
+    /// `BookmarkType::Folder`.
+    ///
+    /// For performance reasons, this only is provided if it's requested.
+    pub child_nodes: Vec<BookmarkNode>,
+    ///*
+    /// Returned by reads, and used to distinguish between the cases of
+    /// "empty child_nodes because the API doesn't return children" and
+    /// "empty child_nodes because this folder has no children (but
+    /// we'd populate them if it had them)".
+    ///
+    /// Only required because you can't have `optional repeated`.
+    ///
+    /// Leaving this out is equivalent to false.
+    pub have_child_nodes: Option<bool>,
+}
+///* An array of bookmark nodes, since we can't represent that directly
+#[derive(Clone, PartialEq)]
+pub struct BookmarkNodeList {
+    pub nodes: Vec<BookmarkNode>,
 }
 
 impl PlacesApi {
@@ -112,6 +266,38 @@ impl PlacesConnection {
                 search_term.as_deref(),
             )
         })
+    }
+
+    fn bookmarks_get_tree(&self, item_guid: &Guid) -> Result<Option<PublicNode>> {
+        self.with_conn(|conn| {
+            let root_id = Guid::from(item_guid.as_str());
+            bookmarks::public_node::fetch_public_tree(conn, &root_id)
+        })
+    }
+
+    fn bookmarks_get_by_guid(
+        &self,
+        guid: &Guid,
+        get_direct_children: u8,
+    ) -> Result<Option<PublicNode>> {
+        self.with_conn(|conn| {
+            let guid = Guid::from(guid.as_str());
+            bookmarks::public_node::fetch_bookmark(conn, &guid, get_direct_children != 0)
+        })
+    }
+
+    fn bookmarks_get_all_with_url(&self, url: Url) -> Result<Vec<PublicNode>> {
+        self.with_conn(|conn| bookmarks::public_node::fetch_bookmarks_by_url(conn, &url))
+    }
+
+    fn bookmarks_search(&self, query: String, limit: i32) -> Result<Vec<PublicNode>> {
+        self.with_conn(|conn| {
+            bookmarks::public_node::search_bookmarks(conn, query.as_str(), limit as u32)
+        })
+    }
+
+    fn bookmarks_get_recent(&self, limit: i32) -> Result<Vec<PublicNode>> {
+        self.with_conn(|conn| bookmarks::public_node::recent_bookmarks(conn, limit as u32))
     }
 }
 

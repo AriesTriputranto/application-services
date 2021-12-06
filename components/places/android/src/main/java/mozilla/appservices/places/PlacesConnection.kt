@@ -17,6 +17,7 @@ import mozilla.appservices.places.uniffi.HistoryMetadataObservation
 import mozilla.appservices.places.uniffi.PlacesApi as UniffiPlacesApi
 import mozilla.appservices.places.uniffi.PlacesConnection as UniffiPlacesConnection
 import mozilla.appservices.places.uniffi.placesApiNew
+import mozilla.appservices.places.uniffi.PublicNode
 import mozilla.appservices.support.native.toNioDirectBuffer
 import mozilla.appservices.sync15.SyncTelemetryPing
 import mozilla.components.service.glean.private.CounterMetricType
@@ -456,50 +457,23 @@ open class PlacesReaderConnection internal constructor(connHandle: Long, conn: U
         }
     }
 
-    override fun getBookmark(guid: String): BookmarkTreeNode? {
-        readQueryCounters.measure {
-            val rustBuf = rustCall { err ->
-                LibPlacesFFI.INSTANCE.bookmarks_get_by_guid(this.handle.get(), guid, 0.toByte(), err)
-            }
-            try {
-                return rustBuf.asCodedInputStream()?.let { stream ->
-                    unpackProtobuf(MsgTypes.BookmarkNode.parseFrom(stream))
-                }
-            } finally {
-                LibPlacesFFI.INSTANCE.places_destroy_bytebuffer(rustBuf)
-            }
+    override fun getBookmark(guid: String): PublicNode? {
+        return readQueryCounters.measure {
+            this.conn.bookmarksGetByGuid(guid, 0.toByte().toUByte())
         }
     }
 
-    override fun getBookmarksTree(rootGUID: String, recursive: Boolean): BookmarkTreeNode? {
-        val rustBuf = rustCall { err ->
-            if (recursive) {
-                LibPlacesFFI.INSTANCE.bookmarks_get_tree(this.handle.get(), rootGUID, err)
-            } else {
-                LibPlacesFFI.INSTANCE.bookmarks_get_by_guid(this.handle.get(), rootGUID, 1.toByte(), err)
-            }
-        }
-        try {
-            return rustBuf.asCodedInputStream()?.let { stream ->
-                unpackProtobuf(MsgTypes.BookmarkNode.parseFrom(stream))
-            }
-        } finally {
-            LibPlacesFFI.INSTANCE.places_destroy_bytebuffer(rustBuf)
+    override fun getBookmarksTree(rootGUID: String, recursive: Boolean): PublicNode? {
+        if (recursive) {
+            return this.conn.bookmarksGetTree(rootGUID)
+        } else {
+            return this.conn.bookmarksGetByGuid(rootGUID, 1.toByte().toUByte())
         }
     }
 
-    override fun getBookmarksWithURL(url: String): List<BookmarkItem> {
-        readQueryCounters.measure {
-            val rustBuf = rustCall { err ->
-                LibPlacesFFI.INSTANCE.bookmarks_get_all_with_url(this.handle.get(), url, err)
-            }
-
-            try {
-                val message = MsgTypes.BookmarkNodeList.parseFrom(rustBuf.asCodedInputStream()!!)
-                return unpackProtobufItemList(message)
-            } finally {
-                LibPlacesFFI.INSTANCE.places_destroy_bytebuffer(rustBuf)
-            }
+    override fun getBookmarksWithURL(url: String): List<PublicNode> {
+        return readQueryCounters.measure {
+            this.conn.bookmarksGetAllWithUrl(url)
         }
     }
 
@@ -509,33 +483,15 @@ open class PlacesReaderConnection internal constructor(connHandle: Long, conn: U
         }
     }
 
-    override fun searchBookmarks(query: String, limit: Int): List<BookmarkItem> {
-        readQueryCounters.measure {
-            val rustBuf = rustCall { err ->
-                LibPlacesFFI.INSTANCE.bookmarks_search(this.handle.get(), query, limit, err)
-            }
-
-            try {
-                val message = MsgTypes.BookmarkNodeList.parseFrom(rustBuf.asCodedInputStream()!!)
-                return unpackProtobufItemList(message)
-            } finally {
-                LibPlacesFFI.INSTANCE.places_destroy_bytebuffer(rustBuf)
-            }
+    override fun searchBookmarks(query: String, limit: Int): List<PublicNode> {
+        return readQueryCounters.measure {
+            this.conn.bookmarksSearch(query, limit)
         }
     }
 
-    override fun getRecentBookmarks(limit: Int): List<BookmarkItem> {
-        readQueryCounters.measure {
-            val rustBuf = rustCall { err ->
-                LibPlacesFFI.INSTANCE.bookmarks_get_recent(this.handle.get(), limit, err)
-            }
-
-            try {
-                val message = MsgTypes.BookmarkNodeList.parseFrom(rustBuf.asCodedInputStream()!!)
-                return unpackProtobufItemList(message)
-            } finally {
-                LibPlacesFFI.INSTANCE.places_destroy_bytebuffer(rustBuf)
-            }
+    override fun getRecentBookmarks(limit: Int): List<PublicNode> {
+        return readQueryCounters.measure {
+            this.conn.bookmarksGetRecent(limit)
         }
     }
 

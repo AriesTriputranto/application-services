@@ -222,43 +222,11 @@ internal interface LibPlacesFFI : Library {
         out_err: RustError.ByReference
     ): Pointer?
 
-    fun bookmarks_get_all_with_url(
-        handle: PlacesConnectionHandle,
-        url: String,
-        error: RustError.ByReference
-    ): RustBuffer.ByValue
-
     fun bookmarks_get_url_for_keyword(
         handle: PlacesConnectionHandle,
         keyword: String,
         error: RustError.ByReference
     ): Pointer?
-
-    fun bookmarks_get_tree(
-        handle: PlacesConnectionHandle,
-        optRootId: String?,
-        error: RustError.ByReference
-    ): RustBuffer.ByValue
-
-    fun bookmarks_get_by_guid(
-        handle: PlacesConnectionHandle,
-        optRootId: String?,
-        getDirectChildren: Byte,
-        error: RustError.ByReference
-    ): RustBuffer.ByValue
-
-    fun bookmarks_search(
-        handle: PlacesConnectionHandle,
-        search: String,
-        limit: Int,
-        error: RustError.ByReference
-    ): RustBuffer.ByValue
-
-    fun bookmarks_get_recent(
-        handle: PlacesConnectionHandle,
-        limit: Int,
-        error: RustError.ByReference
-    ): RustBuffer.ByValue
 
     // Returns newly inserted guid
     fun bookmarks_insert(

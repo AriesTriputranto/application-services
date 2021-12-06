@@ -558,38 +558,11 @@ pub extern "C" fn sync15_bookmarks_sync(
 }
 
 #[no_mangle]
-pub extern "C" fn bookmarks_get_tree(
-    handle: u64,
-    guid: FfiStr<'_>,
-    error: &mut ExternError,
-) -> ByteBuffer {
-    log::debug!("bookmarks_get_tree");
-    CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
-        let root_id = SyncGuid::from(guid.as_str());
-        bookmarks::public_node::fetch_public_tree(conn, &root_id)
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn bookmarks_delete_everything(handle: u64, error: &mut ExternError) {
     log::debug!("bookmarks_delete_everything");
     CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
         bookmarks::delete_everything(conn)?;
         Ok(())
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn bookmarks_get_by_guid(
-    handle: u64,
-    guid: FfiStr<'_>,
-    get_direct_children: u8,
-    error: &mut ExternError,
-) -> ByteBuffer {
-    log::debug!("bookmarks_get_by_guid");
-    CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
-        let guid = SyncGuid::from(guid.as_str());
-        bookmarks::public_node::fetch_bookmark(conn, &guid, get_direct_children != 0)
     })
 }
 
@@ -652,27 +625,6 @@ pub extern "C" fn bookmarks_delete(handle: u64, id: FfiStr<'_>, error: &mut Exte
     })
 }
 
-#[no_mangle]
-pub extern "C" fn bookmarks_get_all_with_url(
-    handle: u64,
-    url: FfiStr<'_>,
-    error: &mut ExternError,
-) -> ByteBuffer {
-    log::debug!("bookmarks_get_all_with_url");
-    CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
-        Ok(match parse_url(url.as_str()) {
-            Ok(url) => {
-                BookmarkNodeList::from(bookmarks::public_node::fetch_bookmarks_by_url(conn, &url)?)
-            }
-            Err(e) => {
-                // There are no bookmarks with the URL if it's invalid.
-                log::warn!("Invalid URL passed to bookmarks_get_all_with_url, {}", e);
-                BookmarkNodeList::from(Vec::<bookmarks::public_node::PublicNode>::new())
-            }
-        })
-    })
-}
-
 /// # Safety
 /// Deref pointer, thus unsafe
 #[no_mangle]
@@ -685,35 +637,6 @@ pub unsafe extern "C" fn bookmarks_get_url_for_keyword(
     CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
         let url = bookmarks::bookmarks_get_url_for_keyword(conn, keyword.as_str())?;
         Ok(url.map(String::from))
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn bookmarks_search(
-    handle: u64,
-    query: FfiStr<'_>,
-    limit: i32,
-    error: &mut ExternError,
-) -> ByteBuffer {
-    log::debug!("bookmarks_search");
-    CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
-        Ok(BookmarkNodeList::from(
-            bookmarks::public_node::search_bookmarks(conn, query.as_str(), limit as u32)?,
-        ))
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn bookmarks_get_recent(
-    handle: u64,
-    limit: i32,
-    error: &mut ExternError,
-) -> ByteBuffer {
-    log::debug!("bookmarks_get_recent");
-    CONNECTIONS.call_with_result(error, handle, |conn| -> places::Result<_> {
-        Ok(BookmarkNodeList::from(
-            bookmarks::public_node::recent_bookmarks(conn, limit as u32)?,
-        ))
     })
 }
 
