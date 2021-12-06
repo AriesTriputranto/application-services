@@ -45,6 +45,9 @@ interface PlacesConnection {
 
     [Throws=PlacesError]
     void metadata_delete_older_than(i64 older_than);
+
+    [Throws=PlacesError]
+    sequence<TopFrecentSiteInfo> get_top_frecent_site_infos(i32 num_items, i64 frecency_threshold);
 };
 
 // Some kind of namespacing for uniffi would be ideal. Multiple udl/macro defns?
@@ -97,6 +100,12 @@ dictionary HistoryHighlight {
 dictionary Dummy {
     sequence<HistoryMetadata>? md;
 };
+
+dictionary TopFrecentSiteInfo {
+    Url url;
+    string? title;
+};
+
 
 [Error]
 enum PlacesError {

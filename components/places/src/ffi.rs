@@ -113,6 +113,21 @@ impl PlacesConnection {
             )
         })
     }
+
+    fn get_top_frecent_site_infos(
+        &self,
+        num_items: i32,
+        frecency_threshold: i64,
+    ) -> Result<Vec<TopFrecentSiteInfo>> {
+        self.with_conn(|conn| {
+            crate::storage::history::get_top_frecent_site_infos(conn, num_items, frecency_threshold)
+        })
+    }
+}
+
+pub struct TopFrecentSiteInfo {
+    pub url: Url,
+    pub title: Option<String>,
 }
 
 pub mod error_codes {
@@ -246,7 +261,6 @@ impl From<Error> for ExternError {
 }
 
 implement_into_ffi_by_protobuf!(msg_types::SearchResultList);
-implement_into_ffi_by_protobuf!(msg_types::TopFrecentSiteInfos);
 implement_into_ffi_by_protobuf!(msg_types::HistoryVisitInfos);
 implement_into_ffi_by_protobuf!(msg_types::HistoryVisitInfosWithBound);
 implement_into_ffi_by_protobuf!(msg_types::BookmarkNode);
