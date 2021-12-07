@@ -1261,7 +1261,7 @@ mod tests {
                 login: login_with_empty_fsu,
                 // Should still be empty.
                 fixedup_form_action_origin: Some("".into()),
-                ..TestCase::default()
+                ..TestCase::default[firefox](https://firefox.com/u/service)
             },
         ];
 
