@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `components&#x2F;sync_manager&#x2F;src&#x2F;types.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>types.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../sync_manager/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+</pre><pre class="rust">
+<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
+<span class="kw">use</span> <span class="ident">std::time::SystemTime</span>;
+<span class="kw">use</span> <span class="ident">sync15::clients::DeviceType</span>;
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SyncParams</span> {
+    <span class="comment">// Why are we performing this sync?</span>
+    <span class="kw">pub</span> <span class="ident">reason</span>: <span class="ident">SyncReason</span>,
+    <span class="comment">// Which engines should we sync?</span>
+    <span class="kw">pub</span> <span class="ident">engines</span>: <span class="ident">SyncEngineSelection</span>,
+    <span class="comment">// Which engines should be enabled in the &quot;account global&quot; list (for</span>
+    <span class="comment">// example, if the UI was used to change an engine&#39;s state since the last</span>
+    <span class="comment">// sync).</span>
+    <span class="kw">pub</span> <span class="ident">enabled_changes</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">bool</span><span class="op">&gt;</span>,
+    <span class="comment">// Keys to encrypt/decrypt data from local database files.  These are</span>
+    <span class="comment">// separate from the key we use to encrypt the sync payload as a whole.</span>
+    <span class="kw">pub</span> <span class="ident">local_encryption_keys</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="comment">// Authorization for the sync server</span>
+    <span class="kw">pub</span> <span class="ident">auth_info</span>: <span class="ident">SyncAuthInfo</span>,
+    <span class="comment">// An opaque string, as returned in the previous sync&#39;s SyncResult and</span>
+    <span class="comment">// persisted to disk, or null if no such state is available. This includes</span>
+    <span class="comment">// information such as the list of engines previously enabled, certain</span>
+    <span class="comment">// server timestamps and GUIDs etc. If this value isn&#39;t correctly persisted</span>
+    <span class="comment">// and round-tripped, each sync may look like a &quot;first sync&quot;.</span>
+    <span class="kw">pub</span> <span class="ident">persisted_state</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="comment">// Information about the current device, such as its name, formfactor and</span>
+    <span class="comment">// FxA device ID.</span>
+    <span class="kw">pub</span> <span class="ident">device_settings</span>: <span class="ident">DeviceSettings</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncReason</span> {
+    <span class="ident">Scheduled</span>,
+    <span class="ident">User</span>,
+    <span class="ident">PreSleep</span>,
+    <span class="ident">Startup</span>,
+    <span class="ident">EnabledChange</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SyncEngineSelection</span> {
+    <span class="ident">All</span>,
+    <span class="prelude-val">Some</span> { <span class="ident">engines</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> },
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SyncAuthInfo</span> {
+    <span class="kw">pub</span> <span class="ident">kid</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">fxa_access_token</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">sync_key</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">tokenserver_url</span>: <span class="ident">String</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DeviceSettings</span> {
+    <span class="kw">pub</span> <span class="ident">fxa_device_id</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">kind</span>: <span class="ident">DeviceType</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SyncResult</span> {
+    <span class="comment">// Result from the sync server</span>
+    <span class="kw">pub</span> <span class="ident">status</span>: <span class="ident">ServiceStatus</span>,
+    <span class="comment">// Engines that synced successfully</span>
+    <span class="kw">pub</span> <span class="ident">successful</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="comment">// Maps the names of engines that failed to sync to the reason why</span>
+    <span class="kw">pub</span> <span class="ident">failures</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="comment">// State that should be persisted to disk and supplied to the sync method</span>
+    <span class="comment">// on the next sync (See SyncParams.persisted_state).</span>
+    <span class="kw">pub</span> <span class="ident">persisted_state</span>: <span class="ident">String</span>,
+    <span class="comment">// The list of engines which are marked as &quot;declined&quot; (ie, disabled) on the</span>
+    <span class="comment">// sync server. The list of declined engines is global to the account</span>
+    <span class="comment">// rather than to the device. Apps should use this after every sync to</span>
+    <span class="comment">// update the local state (ie, to ensure that their Sync UI correctly</span>
+    <span class="comment">// reflects what engines are enabled and disabled), because these could</span>
+    <span class="comment">// change after every sync.</span>
+    <span class="kw">pub</span> <span class="ident">declined</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="comment">// Earliest time that the next sync should happen at</span>
+    <span class="kw">pub</span> <span class="ident">next_sync_allowed_at</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SystemTime</span><span class="op">&gt;</span>,
+    <span class="comment">// JSON string encoding a `SyncTelemetryPing` object</span>
+    <span class="kw">pub</span> <span class="ident">telemetry_json</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ServiceStatus</span> {
+    <span class="prelude-val">Ok</span>,
+    <span class="ident">NetworkError</span>,
+    <span class="ident">ServiceError</span>,
+    <span class="ident">AuthError</span>,
+    <span class="ident">BackedOff</span>,
+    <span class="ident">OtherError</span>,
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sync_manager" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>
+</body></html>

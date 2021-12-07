@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DocumentType",""]],"fn":[["apply_metadata_observation",""],["delete_metadata",""],["delete_older_than",""],["get_between",""],["get_highlights",""],["get_latest_for_url",""],["get_since",""],["query",""]],"struct":[["HistoryHighlight",""],["HistoryHighlightWeights",""],["HistoryMetadata",""],["HistoryMetadataObservation",""]]});

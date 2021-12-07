@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Corruption",""],["ErrorKind",""],["InvalidMetadataObservation",""],["InvalidPlaceInfo",""]],"struct":[["Error",""]],"type":[["Result",""]]});

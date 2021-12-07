@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["places"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.55.0/alloc/string/trait.ToString.html\" title=\"trait alloc::string::ToString\">ToString</a> for <a class=\"enum\" href=\"places/ffi/enum.ErrorWrapper.html\" title=\"enum places::ffi::ErrorWrapper\">ErrorWrapper</a>","synthetic":false,"types":["places::ffi::ErrorWrapper"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
